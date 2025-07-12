@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Cepat Tepat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0c0a1a;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .timer-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .neon-text {
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0073e6, 0 0 20px #0073e6, 0 0 25px #0073e6, 0 0 30px #0073e6, 0 0 35px #0073e6;
+        }
+        .neon-border {
+            border: 2px solid #fff;
+            box-shadow: 0 0 5px #fff, 0 0 10px #0073e6, 0 0 15px #0073e6;
+        }
+        .bg-glass {
+            background: rgba(20, 20, 50, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .client-icon {
+            transition: all 0.3s ease-in-out;
+        }
+        .client-icon.playing {
+            background-color: #f59e0b; /* amber-500 */
+            box-shadow: 0 0 10px #f59e0b;
+        }
+        .client-icon.eliminated {
+            background-color: #ef4444; /* red-500 */
+            box-shadow: 0 0 10px #ef4444;
+            transform: scale(0.9);
+            opacity: 0.6;
+        }
+        .answer-btn:hover {
+            background-color: #3b82f6; /* blue-500 */
+        }
+        .star-filled { color: #facc15; } /* yellow-400 */
+        .star-empty { color: #6b7280; } /* gray-500 */
+    </style>
+</head>
+<body class="bg-gradient-to-br from-[#0a0a23] to-[#000000]">
+
+    <!-- Layar Pemilihan Peran -->
+    <div id="selection-screen" class="text-center p-8">
+        <h1 class="text-4xl font-bold mb-8 neon-text">Pilih Peran Anda</h1>
+        <div class="flex flex-col md:flex-row gap-4">
+            <button id="host-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-2xl transition-transform transform hover:scale-105">Layar Utama (Host)</button>
+            <button id="client-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-2xl transition-transform transform hover:scale-105">Client (Pemain)</button>
+        </div>
+    </div>
+
+    <!-- Layar Utama (Host) -->
+    <div id="main-screen" class="hidden w-full max-w-6xl mx-auto p-4 text-center">
+        <div class="w-full h-[40vh] md:h-[50vh] bg-cover bg-center rounded-lg flex flex-col items-center justify-center" style="background-image: url('https://i.ibb.co/bXn3yJc/host-bg.png');">
+            <h2 class="text-5xl md:text-7xl font-bold timer-font neon-text" id="main-timer">00:00</h2>
+            <p class="text-xl text-gray-300 mt-2">Waktu Permainan</p>
+        </div>
+        <div class="mt-8">
+            <div id="client-grid" class="grid grid-cols-4 md:grid-cols-8 gap-4">
+                <!-- Client icons will be generated here by JS -->
+            </div>
+        </div>
+        <div class="mt-8">
+             <button id="reset-game-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">Reset Game</button>
+        </div>
+    </div>
+
+    <!-- Layar Client (Pemain) -->
+    <div id="client-screen" class="hidden w-full max-w-4xl mx-auto p-4 flex flex-col items-center justify-center h-screen">
+        <div id="star-container" class="flex gap-2 text-4xl mb-4">
+            <!-- Stars will be generated here -->
+        </div>
+        <div class="bg-glass rounded-xl p-6 md:p-8 w-full neon-border">
+            <div class="flex justify-between items-start mb-4">
+                <div class="bg-blue-600 text-white rounded-full px-4 py-1 font-bold">
+                    Soal #<span id="question-number">1</span>
+                </div>
+                <div class="bg-red-600 text-white rounded-full px-4 py-1 font-bold timer-font">
+                    <span id="question-timer">00:00</span>
+                </div>
+            </div>
+            <div id="question-container" class="bg-black bg-opacity-30 p-4 rounded-lg min-h-[100px] flex items-center justify-center text-center mb-6">
+                <p id="question-text" class="text-xl md:text-2xl"></p>
+            </div>
+            <div id="answers-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Answer buttons will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Layar Kalah -->
+    <div id="lose-screen" class="hidden w-full h-screen flex flex-col items-center justify-center bg-red-700 text-center p-4">
+        <h1 class="text-9xl font-bold timer-font text-white animate-pulse">YOU LOSE</h1>
+        <p class="text-3xl text-yellow-300 mt-4">Maaf, jawaban Anda salah.</p>
+        <button id="back-to-selection-btn" class="mt-8 bg-white text-red-700 font-bold py-3 px-8 rounded-lg text-xl">Kembali ke Awal</button>
+    </div>
+
+
+    <script>
+        // --- KONFIGURASI KUIS ---
+        // Ganti pertanyaan, pilihan, dan jawaban di sini.
+        // 'answer' adalah indeks dari pilihan yang benar (0=A, 1=B, 2=C, 3=D)
+        const quizData = [
+            {
+                question: "Siapakah presiden pertama Republik Indonesia?",
+                options: ["Soeharto", "Soekarno", "B.J. Habibie", "Joko Widodo"],
+                answer: 1 
+            },
+            {
+                question: "Apa ibukota dari negara Jepang?",
+                options: ["Kyoto", "Osaka", "Tokyo", "Hiroshima"],
+                answer: 2
+            },
+            {
+                question: "Planet terbesar di tata surya kita adalah...",
+                options: ["Mars", "Bumi", "Saturnus", "Jupiter"],
+                answer: 3
+            },
+            {
+                question: "HTML adalah singkatan dari...",
+                options: ["HyperText Markup Language", "Hyper Tool Multi Language", "High Tech Modern Language", "Home Text Markup Language"],
+                answer: 0
+            },
+            {
+                question: "Gunung tertinggi di dunia adalah...",
+                options: ["Gunung K2", "Gunung Kangchenjunga", "Gunung Everest", "Gunung Lhotse"],
+                answer: 2
+            }
+        ];
+
+        // --- ELEMEN DOM ---
+        const selectionScreen = document.getElementById('selection-screen');
+        const mainScreen = document.getElementById('main-screen');
+        const clientScreen = document.getElementById('client-screen');
+        const loseScreen = document.getElementById('lose-screen');
+        
+        const hostBtn = document.getElementById('host-btn');
+        const clientBtn = document.getElementById('client-btn');
+        const resetGameBtn = document.getElementById('reset-game-btn');
+        const backToSelectionBtn = document.getElementById('back-to-selection-btn');
+
+        // Main Screen Elements
+        const mainTimerEl = document.getElementById('main-timer');
+        const clientGridEl = document.getElementById('client-grid');
+
+        // Client Screen Elements
+        const starContainerEl = document.getElementById('star-container');
+        const questionNumberEl = document.getElementById('question-number');
+        const questionTimerEl = document.getElementById('question-timer');
+        const questionTextEl = document.getElementById('question-text');
+        const answersGridEl = document.getElementById('answers-grid');
+
+        // --- STATE APLIKASI ---
+        let mainTimerInterval;
+        let questionTimerInterval;
+        let currentQuestionIndex = 0;
+        let clientStates = [];
+
+        // --- FUNGSI UTAMA ---
+
+        function init() {
+            hostBtn.addEventListener('click', showMainScreen);
+            clientBtn.addEventListener('click', showClientScreen);
+            resetGameBtn.addEventListener('click', resetGame);
+            backToSelectionBtn.addEventListener('click', () => {
+                location.reload(); // Cara termudah untuk reset penuh
+            });
+        }
+
+        function showScreen(screenToShow) {
+            selectionScreen.classList.add('hidden');
+            mainScreen.classList.add('hidden');
+            clientScreen.classList.add('hidden');
+            loseScreen.classList.add('hidden');
+            screenToShow.classList.remove('hidden');
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+        
+        // --- LOGIKA LAYAR UTAMA (HOST) ---
+
+        function setupClients() {
+            clientStates = [];
+            clientGridEl.innerHTML = '';
+            for (let i = 0; i < 8; i++) {
+                clientStates.push({ id: i + 1, status: 'playing' }); // 'playing' or 'eliminated'
+                const clientDiv = document.createElement('div');
+                clientDiv.innerHTML = `
+                    <div id="client-icon-${i+1}" class="client-icon playing w-full h-16 md:h-20 rounded-lg flex items-center justify-center cursor-pointer">
+                        <span class="text-white font-bold text-lg">Client ${i+1}</span>
+                    </div>
+                `;
+                // Menambahkan simulasi client gugur saat di-klik
+                clientDiv.addEventListener('click', () => {
+                    eliminateClient(i + 1);
+                });
+                clientGridEl.appendChild(clientDiv);
+            }
+        }
+
+        function eliminateClient(clientId) {
+            const client = clientStates.find(c => c.id === clientId);
+            if (client) {
+                client.status = 'eliminated';
+                const icon = document.getElementById(`client-icon-${clientId}`);
+                icon.classList.remove('playing');
+                icon.classList.add('eliminated');
+            }
+        }
+
+        function startMainTimer() {
+            let totalSeconds = 0;
+            mainTimerInterval = setInterval(() => {
+                totalSeconds++;
+                mainTimerEl.textContent = formatTime(totalSeconds);
+            }, 1000);
+        }
+
+        function showMainScreen() {
+            showScreen(mainScreen);
+            setupClients();
+            startMainTimer();
+        }
+        
+        function resetGame() {
+            clearInterval(mainTimerInterval);
+            mainTimerEl.textContent = "00:00";
+            showMainScreen();
+        }
+
+        // --- LOGIKA LAYAR CLIENT (PEMAIN) ---
+
+        function showClientScreen() {
+            showScreen(clientScreen);
+            currentQuestionIndex = 0;
+            displayQuestion();
+        }
+
+        function startQuestionTimer() {
+            clearInterval(questionTimerInterval);
+            let seconds = 0;
+            questionTimerEl.textContent = formatTime(seconds);
+            questionTimerInterval = setInterval(() => {
+                seconds++;
+                questionTimerEl.textContent = formatTime(seconds);
+            }, 1000);
+        }
+
+        function displayQuestion() {
+            if (currentQuestionIndex >= quizData.length) {
+                // Game selesai dengan sukses
+                clearInterval(questionTimerInterval);
+                questionTextEl.textContent = "Selamat! Anda telah menyelesaikan semua soal!";
+                answersGridEl.innerHTML = '';
+                return;
+            }
+
+            renderStars();
+            startQuestionTimer();
+            
+            const q = quizData[currentQuestionIndex];
+            questionNumberEl.textContent = currentQuestionIndex + 1;
+            questionTextEl.textContent = q.question;
+            answersGridEl.innerHTML = '';
+
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            q.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'answer-btn bg-black bg-opacity-40 p-4 rounded-lg text-left text-lg hover:bg-blue-600 transition-colors duration-200';
+                button.innerHTML = `<span class="font-bold mr-2">${optionLetters[index]}.</span> ${option}`;
+                button.addEventListener('click', () => handleAnswer(index));
+                answersGridEl.appendChild(button);
+            });
+        }
+
+        function handleAnswer(selectedIndex) {
+            clearInterval(questionTimerInterval);
+            const correctIndex = quizData[currentQuestionIndex].answer;
+            
+            if (selectedIndex === correctIndex) {
+                // Jawaban benar
+                currentQuestionIndex++;
+                displayQuestion();
+            } else {
+                // Jawaban salah
+                showScreen(loseScreen);
+            }
+        }
+
+        function renderStars() {
+            starContainerEl.innerHTML = '';
+            for (let i = 0; i < quizData.length; i++) {
+                const star = document.createElement('span');
+                star.innerHTML = '&#9733;'; // Kode entitas HTML untuk bintang
+                if (i < currentQuestionIndex) {
+                    star.className = 'star-filled'; // Bintang kuning untuk soal terjawab
+                } else {
+                    star.className = 'star-empty'; // Bintang abu-abu untuk sisa soal
+                }
+                starContainerEl.appendChild(star);
+            }
+        }
+
+
+        // --- INISIALISASI ---
+        init();
+
+    </script>
+</body>
+</html>
